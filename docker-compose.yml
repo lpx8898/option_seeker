@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  # 1. IB Gateway (无头模式TWS)
+  ib-gateway:
+    image: gnzsnz/ib-gateway:latest
+    container_name: ib-gateway
+    restart: always
+    environment:
+      - TWS_USERID=YOUR_USERNAME_HERE  # ⚠️ 改成你的IB账号
+      - TWS_PASSWORD=YOUR_PASSWORD_HERE # ⚠️ 改成你的IB密码
+      - TRADING_MODE=live     # live=实盘, paper=模拟盘
+      - IB_API_PORT=4001      # Docker内部使用的端口
+      - VNC_PASSWORD=myvncpass # VNC远程桌面密码
+    ports:
+      - "4001:4001"
+      - "6080:6080" # 用于浏览器登录验证 2FA
+
+  # 2. 你的 Streamlit 程序
+  app:
+    build: .
+    container_name: strategy-app
+    restart: always
+    ports:
+      - "80:8501" # 外部访问端口80
+    environment:
+      - IB_HOST=ib-gateway    # 连接到上面的 gateway 容器
+      - IB_PORT=4001          # 对应 gateway 的端口
+      - APP_PASSWORD=set_your_password # ⚠️ 设置你的网页访问密码
+    depends_on:
+      - ib-gateway
